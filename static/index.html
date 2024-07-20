@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+    	<script src="https://cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+
+	</head>
+
+	<body>
+		<div id="disease-selectors">
+			<label>Please wait a few seconds, fetching data...</label>
+		</div>
+
+		<button onclick="makeCharts();">Generate Visualizations!</button>
+
+		<h1 style="text-align: center;">Obesity Related Deaths</h1>
+		<div class="ct-bar-chart"></div>
+		<div class="ct-pie-chart"></div>
+		<style>
+			.ct-label {
+				font-size: 15px;
+				font-weight: bold;
+				color: black;
+				fill: black;
+			}
+		</style>
+		<script>
+			var data = null;
+			$(document).ready(() => {
+				$.getJSON("http://localhost:8080/data", (respData) => {
+					data = respData;
+					console.log(data);
+
+					var sampleCheckbox = '<input type="checkbox" causeid="__id__"> <label>__label__</label> <br>';
+
+					$("#disease-selectors").empty();
+					for (var key in data.codeToDisplay) {
+						$("#disease-selectors").append(
+							sampleCheckbox.replace("__id__", key).replace("__label__", data.codeToDisplay[key])
+						);
+					}
+				});
+			});
+
+			function makeCharts() {
+				if (data == null) {
+					setTimeout(makeCharts, 100);
+					return;
+				}
+
+				var codeInclusions = [];
+				var chks = $("input[type=checkbox]:checked");
+				for (var i = 0; i < chks.length; i++)
+					codeInclusions.push($(chks[i]).attr("causeid"));
+				
+				if (codeInclusions.length == 0) {
+					alert("Please select at least 1 checkbox");
+					return;
+				}
+
+				var chartData = {labels: [], series: [[]]};
+
+				for (var key in data.codeToFrequency) {
+					if (codeInclusions.includes(key)) {
+						var label = data.codeToDisplay[key] + " (SNOMED : " + key + ")";
+						chartData.labels.push(label);
+						chartData.series[0].push(data.codeToFrequency[key]);
+					}
+				}
+
+				console.log(chartData);
+
+				var options = {
+					height: 500,
+					horizontalBars: true,
+					axisY: {
+						offset: 400
+					},
+					axisX: {
+						onlyInteger: true
+					}
+				}
+				new Chartist.Bar('.ct-bar-chart', chartData, options);
+
+
+				var pieData = {
+					labels: [],
+					series: []
+				};
+
+				for (var key in data.codeToFrequency) {
+					if (codeInclusions.includes(key)) {
+						var label = data.codeToDisplay[key];
+						pieData.labels.push(label);
+						pieData.series.push(data.codeToFrequency[key]);
+					}
+				}
+
+				var sum = function(a, b) { return a + b };
+
+				for (var i = 0; i < pieData.labels.length; i++) {
+					pieData.labels[i] += " " + Math.round(pieData.series[i] / pieData.series.reduce(sum) * 100) + '%';
+				}
+
+				var pieOptions = {
+					height: 500, 
+					labelOffset: 100
+				};
+
+				new Chartist.Pie('.ct-pie-chart', pieData, pieOptions);
+			}
+		</script>
+		
+	</body>
+
+</html>

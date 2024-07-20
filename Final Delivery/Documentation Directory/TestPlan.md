@@ -1,0 +1,6 @@
+- [x] Test Disease Selectors and diseases are being selected
+- [x] Test Visualizations are displaying right numbers based on frequency JSON
+- [x] Test Bar Chart displaying correctly
+- [x] Test Pie Chart displaying correctly
+- [x] Confirm data with HAPI FHIR API
+- [x] Test Different disease combinations
